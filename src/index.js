@@ -14,9 +14,12 @@ app.get("/", (req, res) => {
   res.send("This is health check route...!");
 });
 
-import userRoute from "../src/routes/user.route.js";
+import authRoute from "./routes/auth.route.js";
+import userRouter from "./routes/user.route.js";
 
-app.use("/api/auth", userRoute);
+//api endpoint
+app.use("/api/auth", authRoute);
+app.use("/api/users", userRouter);
 
 const port = process.env.PORT || 8000;
 
