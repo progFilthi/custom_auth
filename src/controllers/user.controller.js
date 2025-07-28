@@ -103,7 +103,7 @@ const userController = {
       });
       if (existingEmail) {
         return res
-          .status(209)
+          .status(409)
           .json({ message: "User with the same email already exits" });
       }
 
@@ -113,7 +113,7 @@ const userController = {
       });
       if (existingUsername) {
         return res
-          .status(209)
+          .status(409)
           .json({ message: "User with the same username already exits" });
       }
 
