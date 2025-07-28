@@ -1,8 +1,93 @@
 import prisma from "../lib/lib.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const userController = {
-  getAllUsers: async () => {},
+  //getAll Users Controller
+  getAllUsers: async (req, res) => {
+    try {
+      const users = await prisma.user.findMany();
+      if (!users)
+        return res
+          .status(400)
+          .json({ message: "There are no signed users yet" });
+      res.status(200).json({ users });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error when trying to GET all users",
+      });
+      console.error(error);
+    }
+  },
+  //Get a single user controller
+  getUser: async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return res.status(404).json({ message: "User not found!" });
+      res.status(200).json({ message: "User fetched successfully", user });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error when trying to GET a user by id",
+      });
+      console.error(error);
+    }
+  },
+  updateUser: async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { first_name, last_name, user_name, email, password } = req.body;
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          first_name,
+          last_name,
+          user_name,
+          email,
+          password: hashedPassword,
+        },
+      });
+      // delete user.password;
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.status(200).json({ message: "User UPDATED succesfully", user });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error when trying to UPDATE a user by id",
+      });
+      console.error(error);
+    }
+  },
+  //delete a user controller
+  deleteUser: async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await prisma.user.delete({ where: { id: userId } });
+      if (!user) return res.status(404).json({ message: "user not found!" });
+      res.status(200).json({ message: "User DELETED successfully", user });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error while trying to DELETE a user",
+      });
+      console.error(error);
+    }
+  },
+  //deleting all users controller
+  deleteAllUsers: async (req, res) => {
+    try {
+      const users = await prisma.user.deleteMany({});
+      res.status(200).json({ message: "Users deleted successfully", users });
+    } catch (error) {
+      res.status(500).json({
+        message: "Internal server error while trying to DELETE all users",
+      });
+      console.error(error);
+    }
+  },
+  //this is a sign up controller
   signUp: async (req, res) => {
     try {
       const { first_name, last_name, user_name, email, password } = req.body;
@@ -12,18 +97,30 @@ const userController = {
           .json({ message: "All the fields are required!" });
       }
 
-      //check for an existing user!
-
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
+      //check for an existing user email!
+      const existingEmail = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingEmail) {
         return res
           .status(209)
           .json({ message: "User with the same email already exits" });
       }
 
+      //check for an existing user name!
+      const existingUsername = await prisma.user.findUnique({
+        where: { user_name },
+      });
+      if (existingUsername) {
+        return res
+          .status(209)
+          .json({ message: "User with the same username already exits" });
+      }
+
       //we need to hash the password with bcrypt
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
 
       const user = await prisma.user.create({
         data: {
@@ -35,12 +132,13 @@ const userController = {
         },
       });
       delete user.password;
-      res.status(201).json({ message: "User created successfully", user });
+      res.status(201).json({ message: "User CREATED successfully", user });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal error while signing up" });
     }
   },
+  //this is a sign in controller
   signIn: async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -50,7 +148,7 @@ const userController = {
           .json({ message: "Email and password are required!" });
       }
       const user = await prisma.user.findUnique({ where: { email } });
-      if (!email) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -60,8 +158,21 @@ const userController = {
       }
 
       //we gonna add the JWT here later then send it back!!
+      const jwt_token = process.env.JWT_SECRET;
+      const expires_in = process.env.JWT_EXPIRES_IN;
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        jwt_token,
+        { expiresIn: expires_in }
+      );
 
-      res.status(200).json({ message: "Login successful" });
+      //we only gonna need to verify the token
+      // if (!token)
+      //   return res
+      //     .status(400)
+      //     .json({ message: "invalid or no token provided" });
+
+      res.status(200).json({ token, message: "Login successful" });
     } catch (error) {
       res
         .status(500)
