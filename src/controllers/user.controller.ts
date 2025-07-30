@@ -1,10 +1,11 @@
-import prisma from "../lib/lib.js";
+import prisma from "../lib/lib";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { Response, Request } from "express";
 
 const userController = {
   //getAll Users Controller
-  getAllUsers: async (req, res) => {
+  getAllUsers: async (req: Request, res: Response) => {
     try {
       const users = await prisma.user.findMany();
       if (!users)
@@ -20,7 +21,7 @@ const userController = {
     }
   },
   //Get a single user controller
-  getUser: async (req, res) => {
+  getUser: async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -33,7 +34,7 @@ const userController = {
       console.error(error);
     }
   },
-  updateUser: async (req, res) => {
+  updateUser: async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const { first_name, last_name, user_name, email, password } = req.body;
@@ -62,7 +63,7 @@ const userController = {
     }
   },
   //delete a user controller
-  deleteUser: async (req, res) => {
+  deleteUser: async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const user = await prisma.user.delete({ where: { id: userId } });
@@ -76,7 +77,7 @@ const userController = {
     }
   },
   //deleting all users controller
-  deleteAllUsers: async (req, res) => {
+  deleteAllUsers: async (req: Request, res: Response) => {
     try {
       const users = await prisma.user.deleteMany({});
       res.status(200).json({ message: "Users deleted successfully", users });
@@ -88,7 +89,7 @@ const userController = {
     }
   },
   //this is a sign up controller
-  signUp: async (req, res) => {
+  signUp: async (req: Request, res: Response) => {
     try {
       const { first_name, last_name, user_name, email, password } = req.body;
       if (!first_name || !last_name || !email || !password || !user_name) {
@@ -139,7 +140,7 @@ const userController = {
     }
   },
   //this is a sign in controller
-  signIn: async (req, res) => {
+  signIn: async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -158,8 +159,8 @@ const userController = {
       }
 
       //we gonna add the JWT here later then send it back!!
-      const jwt_token = process.env.JWT_SECRET;
-      const expires_in = process.env.JWT_EXPIRES_IN;
+      const jwt_token = process.env.JWT_SECRET as string;
+      const expires_in = process.env.JWT_EXPIRES_IN as string;
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         jwt_token,
