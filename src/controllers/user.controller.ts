@@ -2,6 +2,7 @@ import prisma from "../lib/lib";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Response, Request } from "express";
+import ms from "ms";
 
 const userController = {
   //getAll Users Controller
@@ -132,8 +133,10 @@ const userController = {
           password: hashedPassword,
         },
       });
-      delete user.password;
-      res.status(201).json({ message: "User CREATED successfully", user });
+      res.status(201).json({
+        message: "User CREATED successfully",
+        user: { ...user, password: undefined },
+      });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal error while signing up" });
@@ -160,18 +163,12 @@ const userController = {
 
       //we gonna add the JWT here later then send it back!!
       const jwt_token = process.env.JWT_SECRET as string;
-      const expires_in = process.env.JWT_EXPIRES_IN as string;
+      const expires_in = process.env.JWT_EXPIRES_IN as ms.StringValue;
       const token = jwt.sign(
         { userId: user.id, email: user.email },
         jwt_token,
         { expiresIn: expires_in }
       );
-
-      //we only gonna need to verify the token
-      // if (!token)
-      //   return res
-      //     .status(400)
-      //     .json({ message: "invalid or no token provided" });
 
       res.status(200).json({ token, message: "Login successful" });
     } catch (error) {

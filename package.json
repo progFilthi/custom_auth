@@ -8,11 +8,11 @@
   ],
   "license": "MIT",
   "author": "programmer filthi",
-  "type": "module",
-  "main": "src/index.js",
+  "type": "commonjs",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "bun --start src/index.ts",
+    "dev": "bun --dev src/index.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
